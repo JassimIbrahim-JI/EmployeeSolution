@@ -1,0 +1,74 @@
+﻿
+
+    <MudDialog Style="width:280px;" Visible="Visibility">
+        <TitleContent>
+            <MudText>
+                <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+                @Title General Department
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+             <EditForm Model="Dept" Enhance OnValidSubmit="Save"> 
+                 <DataAnnotationsValidator/>
+                  <MudTextField @bind-Value="@Dept.Name" Label="Name" Required="true"
+                  Validation="()=>Dept.Name"/>
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+
+            </MudItem>
+             </EditForm>
+           
+        </DialogContent>
+     
+    </MudDialog>
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public GeneralDepartment Dept { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<GeneralDepartment> HandleSaveOperationEvent {get; set;}
+
+    private bool Visibility { get; set; } = false;
+
+    private string Title { get; set; } = "Add";
+
+    public void OpenDialog()
+    {
+        Visibility = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        Visibility = false;
+        StateHasChanged();
+    }
+
+    private async void Save()
+    {
+        if(string.IsNullOrEmpty(Dept.Name))
+        {
+            await dialogService.ShowMessageBox("Alert!","You need to provide GeneralDepartement Name");
+
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(Dept);
+           
+       
+        }
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+}

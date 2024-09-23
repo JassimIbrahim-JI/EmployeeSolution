@@ -1,0 +1,20 @@
+﻿@inject IJSRuntime JS
+
+
+<MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Outlined.Download"
+IconColor="@Color.Success" OnClick="DownloadFile">Download Excel</MudButton>
+
+@code {
+
+    [Parameter]
+    public string FileName { get; set; }
+
+    [Parameter]
+    public byte[] FileContent { get; set; }
+
+    private async Task DownloadFile()
+    {
+        var base64 = Convert.ToBase64String(FileContent);
+        await JS.InvokeVoidAsync("downloadFileFromBase64", FileName, base64);
+    }
+}

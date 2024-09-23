@@ -1,0 +1,82 @@
+﻿
+
+ <MudDialog Style="width:280px" @bind-Visible="IsVisible">
+      
+     <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AddLocation" Class="mr-3 mb-n1" />
+            @Title City
+        </MudText>
+     </TitleContent>
+     <DialogContent>
+         <EditForm Model="town" Enhance OnValidSubmit="Save">
+            <MudTextField @bind-Value="@town.Id" Label="TOWN ID" Disabled ReadOnly="true" />
+            <MudTextField @bind-Value="@town.Name" Label="Town Name" />
+            <MudSelect Class="mt-3" T="int" Required="true" @bind-Value="@town.CityId" Label="Select City" AnchorOrigin="Origin.BottomCenter">
+                @if (town.City == null)
+             
+                @foreach (var item in Cities)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+                
+            </MudSelect>
+            <div class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="Cancel">Close</MudButton>
+            </div>
+        </EditForm>
+       
+     </DialogContent>
+   
+ </MudDialog>
+
+
+
+
+
+
+@code {
+    [Parameter] public Town town { get; set; } = new();
+    [Parameter] public List<City> Cities { get; set; } = new();
+    [Parameter] public EventCallback<Town> HandleSaveOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false; 
+
+    public string Title { get; set; } = "Add";
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(town.Name) || town.CityId <= 0)
+        {
+            await swal.FireAsync("Alert!","You need to provide Town name.");
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(town);
+        }
+    }
+
+    public void Cancel()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+    private async Task ForceLoadCities() =>
+    Cities = await _cityService.GetAll(Constants.CitytBaseUrl);
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadCities();
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+   
+}

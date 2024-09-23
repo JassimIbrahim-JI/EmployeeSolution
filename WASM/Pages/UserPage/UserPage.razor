@@ -1,0 +1,217 @@
+﻿@using OfficeOpenXml
+@implements IDisposable
+@inject IJSRuntime JS
+
+@if (sectionState.ShowUser)
+{
+
+    <MudPaper Class="mt-5" Elevation="1">
+        <MudTable Items="@pagedUsers" @bind-SelectedItem="User"
+                  Bordered="true" Dense="@dense" Hover="@hover" Filter="new Func<ManageUser, bool>(FilterAsync)" SortLabel="Sort By">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Class="float-start me-4">
+                    Users
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Class="me-2" Size="Size.Small" OnClick="OpenDialog" StartIcon="@Icons.Material.Filled.Edit" IconColor="Color.Primary">Manage User</MudButton>
+
+                <MudButton Size="Size.Small" OnClick="ExportToExcel" StartIcon="@Icons.Material.Filled.FileDownload" Color="Color.Primary">
+                    Export
+                </MudButton>
+                <MudSpacer />
+                <MudTextField Placeholder="Search"
+                              Adornment="Adornment.Start"
+                              IconSize="Size.Small"
+                              Class="mt-0"
+                              FullWidth="false"
+                              Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              @bind-Value="searchString">
+
+                </MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">#</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">Id</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">Username</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">Email</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">Role</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<ManageUser, object>(x=>x.UserId)">Actions</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="#">@((Users.IndexOf(context) + 1))</MudTd>
+                <MudTd DataLabel="Id">@context.UserId</MudTd>
+                <MudTd DataLabel="Username">@context.Name</MudTd>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Role">@context.Role</MudTd>
+
+                <MudTd DataLabel="Actions">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Info" id="cursorStyle" @onclick="()=>Edit(context)"></MudIcon>
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Warning" id="cursorStyle" @onclick="()=>DeleteClicked(context)"></MudIcon>
+                    </MudItem>
+                </MudTd>
+
+            </RowTemplate>
+            <FooterContent>
+                <MudTablePager RowsPerPageString="5" />
+            </FooterContent>
+        </MudTable>
+    </MudPaper>
+
+}
+
+<UserDialog @ref="_modal" SystemRoles="Roles" Manage="User" HandleOpertationSaveEvent="HandleSaveOperationEvent"/>
+@code {
+    private ManageUser User = new();
+
+    public List<ManageUser> Users { get; set; } = new();
+    public List<SystemRole> Roles { get; set; } = new();
+
+    private UserDialog? _modal;
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+
+    private int pageIndex = 1;
+    private int rowsPerPage = 5;
+    private IEnumerable<ManageUser> pagedUsers => Users.Skip((pageIndex - 1) * rowsPerPage).Take(rowsPerPage);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUsers();
+        await GetRoles();
+        sectionState.Action += StateHasChanged;
+    }
+
+    private bool FilterAsync(ManageUser user)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{user.Name}".Contains(searchString)) return true;
+        if ($"{user.UserId}".Contains(searchString)) return true;
+        if ($"{user.Role}".Contains(searchString)) return true;
+        if ($"{user.Email}".Contains(searchString)) return true;
+
+        return false;
+    }
+
+
+    private async Task GetUsers()
+    {
+        Users = await _accountService.GetUsers();
+    }
+    private async Task GetRoles()
+    {
+        Roles = await _accountService.GetRoles();    
+    }
+
+
+    private async Task HandleSaveOperationEvent(ManageUser manageUser)
+    {
+        var result = await _accountService.UpdateUser(manageUser);
+        bool successCheck = await DisplayMessage(result.Successd, result.Message);
+        if(successCheck)
+        {
+            User = new();
+            await GetUsers();
+            _modal?.CloseDialog();
+        }
+
+    }
+
+    public void OpenDialog()
+    {
+        _modal?.OpenDialog();
+    }
+
+    private void Edit(ManageUser manage)
+    {
+        User = manage;
+        OpenDialog();
+    }
+
+    public async Task ExportToExcel()
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add("Employees");
+            worksheet.Cells["A1"].LoadFromCollection(pagedUsers, true);
+            var stream = new MemoryStream();
+            package.SaveAs(stream);
+            stream.Position = 0;
+            var base64 = Convert.ToBase64String(stream.ToArray());
+            await JS.InvokeVoidAsync("saveAsFile", $"{User.UserId}.xlsx", base64);
+        }
+    }
+
+    private async Task DeleteClicked(ManageUser manageUser)
+    {
+
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+        {
+            Title="Are You sure?",
+            Text = "You will not be able to recover this user!",
+            Icon = SweetAlertIcon.Warning,
+            ShowCancelButton = true,
+            ConfirmButtonText = "Delete",
+            CancelButtonText = "Cancel"
+        });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              $"the{manageUser.Name} has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _accountService.DeleteUser(manageUser.UserId);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                await GetUsers();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              $"{manageUser.Name} is safe :)",
+              SweetAlertIcon.Error
+              );
+        }
+          
+    }
+
+    private async Task<bool> DisplayMessage(bool Successd, string Message)
+    {
+        if (Successd)
+        { 
+            await dialogService.ShowMessageBox("Success Operation",Message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!", Message);
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+}

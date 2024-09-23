@@ -1,0 +1,74 @@
+﻿
+
+ <MudDialog Style="width:320px" @bind-Visible="IsVisible">
+     <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AddModerator" Class="mr-3 mb-n1" />
+            @Title Employee Health Issue
+        </MudText>
+     </TitleContent>
+     <DialogContent>
+         <EditForm Model="Doctor" Enhance OnValidSubmit="Save">
+             <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@Doctor.Id" Disabled ReadOnly="true" Label="ID" />
+            <MudDatePicker @bind-Date="@Doctor.Date" DateFormat="yyyy-MM-dd" MinDate="minDate" MaxDate="maxDate" Label="Date"></MudDatePicker>
+            <MudTextField @bind-Value="@Doctor.MedicalRecommendation" Variant="Variant.Text" Label="Medical Recommendation"></MudTextField>
+            <MudTextField @bind-Value="@Doctor.MedicalDiagonse" Variant="Variant.Text" Label="Medical Diagonse"></MudTextField>
+
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="Close">Close</MudButton>
+            </MudItem>
+        </EditForm>
+     </DialogContent>
+
+ </MudDialog>
+
+
+@code {
+
+
+    [Parameter] public Doctor Doctor { get; set; } = new();
+    [Parameter] public EventCallback<Doctor> HandleSaveOperationEvent { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+
+    private DateTime minDate = new DateTime(2023, 1, 1);
+    private DateTime maxDate = new DateTime(2025, 1, 1);
+
+    private async Task Save()
+    {
+        if (string.IsNullOrEmpty(Doctor.MedicalDiagonse) || Doctor.EmployeeId <= 0)
+        {
+            await dialogService.ShowMessageBox("Alert!", "You need to provide dignose name.");
+
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(Doctor);
+        }
+    }
+
+
+    public void Close()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+}

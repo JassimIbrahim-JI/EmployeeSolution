@@ -1,0 +1,135 @@
+﻿ 
+
+ <MudDialog Style="width:280px;" @bind-Visible="IsVisible">
+     <TitleContent>
+            
+            <MudText>
+                <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+                @Title Overtime
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="itemModel" Enhance OnValidSubmit="Save">
+                <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@itemModel.EmployeeId" Disabled="true" ReadOnly="true" Label="ID" />
+            <MudTextField @bind-Value="@itemModel.Punishment"  Label="Punishment" />
+            <MudDatePicker @bind-Date="itemModel.PunishmentDate" 
+                        DateFormat="yyyy-MM-dd" 
+                        MinDate="minDate" 
+                        MaxDate="maxDate" 
+                        Label="Punishment Date" />
+
+            <MudSelect T="int" Class="mt-3" Required="true" @bind-Value="itemModel.SanctionTypeId" Variant="Variant.Outlined" Label="Select SanctionType" AnchorOrigin="Origin.BottomCenter">
+                
+                @foreach (var item in SanctionTypes)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <div class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </div>
+        </EditForm>
+          
+        </DialogContent>
+  
+   
+ </MudDialog>
+
+
+@* <SfDialog Width="280px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"></DialogEvents>
+    <DialogTemplates>
+        <Header><div>@Title Sanction</div></Header>
+        <Content>
+            <EditForm Model="itemModel" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Employee Id</label>
+                            <input @bind="itemModel.EmployeeId" class="form-control" disabled />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Punishment</label>
+                            <InputText @bind-Value="itemModel.Punishment" class="form-control" />
+                        </div>
+
+                        <div class="form-group mt-2">
+                            <label class="form-label">Start Date</label>
+                            <InputDate @bind-Value="itemModel.PunishmentDate" class="form-control" />
+                        </div>
+
+                        <div class="form-group mt-3 mb-3">
+                            <label class="form-label">Select Type</label>
+                            @if (itemModel.SanctionType != null)
+                            {
+                                string selected = itemModel.SanctionType.Name;
+                                <SfDropDownList TValue="string" TItem="SanctionType" Placeholder="@selected" DataSource="SanctionTypes">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="SanctionType" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="SanctionType" Placeholder="Select Type" DataSource="SanctionTypes">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="SanctionType" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save"></DialogButton>
+    </DialogButtons>
+</SfDialog>
+ *@
+
+
+@code {
+
+    [Parameter] public Sanction itemModel { get; set; } = new();
+    [Parameter] public List<SanctionType> SanctionTypes { get; set; } = new();
+    [Parameter] public EventCallback<Sanction>HandleSaveOperationEvent{ get; set; }
+
+    private DateTime minDate = new DateTime(2023, 1, 1);
+    private DateTime maxDate = new DateTime(2025, 1, 1);
+
+    public string Title { get; set; } = "Add";
+    public bool IsVisible { get; set; } = false;
+
+    private async void Save()
+    {
+        if (itemModel.SanctionTypeId <= 0)
+            await dialogService.ShowMessageBox("Alert!", "You need to provide type.");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(itemModel);
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+    public void CloseDialog() 
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task ForceLoadSanction() =>
+    SanctionTypes = await _sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadSanction();
+        StateHasChanged();
+    }
+
+      
+}

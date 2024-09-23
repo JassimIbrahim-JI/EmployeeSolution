@@ -1,0 +1,201 @@
+﻿@implements IDisposable
+
+
+@if (sectionState.ShowTown)
+{
+    <MudPaper Class="mt-5" Elevation="1">
+        <MudTable Items="@Town.Take(4)" @bind-SelectedItem="town"
+                  Bordered="true" Dense="@dense" Hover="@hover" Filter="new Func<Town, bool>(FilterAsync)" SortLabel="Sort By">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Class="float-start me-4">
+                    Towns
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddButtonClicked" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Primary">Add Town</MudButton>
+                <MudSpacer />
+                <MudTextField Placeholder="Search"
+                              Adornment="Adornment.Start"
+                              IconSize="Size.Small"
+                              Class="mt-0"
+                              FullWidth="false"
+                              Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              @bind-Value="searchString">
+
+                </MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Town, object>(x=>x.Name)">#</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Town, object>(x=>x.Name)">Id</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Town, object>(x=>x.Name)">Town</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Town, object>(x=>x.Name)">City</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Town, object>(x=>x.Name)">Actions</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="#">@((Town.IndexOf(context) + 1))</MudTd>
+                <MudTd DataLabel="Id">@context.Id</MudTd>
+                <MudTd DataLabel="Town">@context.Name</MudTd>
+                <MudTd DataLabel="City">@context.City!.Name</MudTd>
+
+                <MudTd DataLabel="Actions">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Info" id="cursorStyle" @onclick="()=>EditClicked(context)"></MudIcon>
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Warning" id="cursorStyle" @onclick="()=>DeleteClicked(context)"></MudIcon>
+                    </MudItem>
+                </MudTd>
+
+
+
+            </RowTemplate>
+
+        </MudTable>
+    </MudPaper>
+ 
+}
+<TownDialog @ref="townDialog" town="town" Cities="Cities" HandleSaveOperationEvent="HandleSaveOperationEvent"/>
+
+@code {
+    private Town town = new();
+
+    public List<City> Cities { get; set; } = new();
+    public List<Town> Town { get; set; } = new();
+
+    public string Title { get; set; } = "Add";
+    TownDialog? townDialog;
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+    private bool FilterAsync(Town town)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{town.Name}".Contains(searchString)) return true;
+        if ($"{town.Id}".Contains(searchString)) return true;
+        if ($"{town.City!.Name}".Contains(searchString)) return true;
+
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTowns();
+        await GetCities();
+        sectionState.Action += StateHasChanged;
+    }
+
+    private async Task GetTowns()
+    {
+        Town = await _townService.GetAll(Constants.TownBaseUrl);
+    }
+    private async Task GetCities()
+    {
+        Cities = await _cityService.GetAll(Constants.CitytBaseUrl);
+    }
+
+    private void AddButtonClicked()
+    {
+        townDialog?.ChangeTitle("Add");
+        town = new();
+        OpenDialog();
+    }
+
+    public void OpenDialog()
+    {
+        townDialog?.OpenDialog();
+    }
+
+    private async Task HandleSaveOperationEvent(Town townDb)
+    {
+        bool successCheck = false;
+        if (townDb.Id > 0)
+        {
+            var result = await _townService.Update(townDb, Constants.TownBaseUrl);
+            successCheck = await DisplayMessage(result.Successd, result.Message);
+        }
+        else
+        {
+            var response = await _townService.Insert(townDb, Constants.TownBaseUrl);
+            successCheck = await DisplayMessage(response.Successd, response.Message);
+        }
+
+        if (successCheck)
+        {
+            town = new();
+            await GetTowns();
+            townDialog?.ChangeTitle("Add");
+            townDialog!.Cancel();
+        }
+    }
+
+    private void EditClicked(Town townDb)
+    {
+        townDialog?.ChangeTitle("Update");
+        town=townDb;
+        OpenDialog();
+    }
+    private async Task DeleteClicked(Town townDb)
+    {
+
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are You sure?",
+                Text = $"You will not be able to recover {townDb.Name}!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              $"{townDb.Name} has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _townService.Delete(townDb.Id, Constants.TownBaseUrl);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                await GetTowns();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              $"{townDb.Name} is safe :)",
+              SweetAlertIcon.Error
+              );
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool Successd, string Message)
+    {
+        if (Successd)
+        {
+            await dialogService.ShowMessageBox("Success Operation", Message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!", Message);
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+}

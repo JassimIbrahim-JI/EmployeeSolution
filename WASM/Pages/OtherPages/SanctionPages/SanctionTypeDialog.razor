@@ -1,0 +1,57 @@
+﻿
+
+
+<MudDialog Style="width:280px;" @bind-Visible="IsVisible">
+    <TitleContent>
+
+        <MudText>
+            <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+            @Title Overtime
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Sanction" Enhance OnValidSubmit="Save">
+             <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@Sanction.Name" For="@(()=>Sanction.Name)" Label="Name" />
+            <div class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </div>
+        </EditForm>
+      
+    </DialogContent>
+  
+
+</MudDialog>
+
+
+@code {
+    [Parameter] public SanctionType Sanction { get; set; } = new();
+    [Parameter] public EventCallback<SanctionType> HandleSaveOperationEvent { get; set; }
+
+    public string Title { get; set; } = "Add";
+    public bool IsVisible { get; set; } = false;
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Sanction.Name))
+            await dialogService.ShowMessageBox("Alert!","You need to provide type name.");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Sanction);
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+}

@@ -1,0 +1,165 @@
+﻿@implements IDisposable
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-2 cursorStyle" @onclick="EmpClicked">
+            <div class="card border-primary">
+                <div class="card-header"><i class="bi bi-people text-primary"></i>
+                    Employee
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                        @EmployeeCount
+                        <span class="visually-hidden">Employee Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 cursorStyle" @onclick="VacationClicked">
+            <div class="card border-success">
+                <div class="card-header"><i class="bi bi-backpack3 text-success"></i>
+                    Vacation
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                        @VactionCount
+                        <span class="visually-hidden">Vacation Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 cursorStyle" @onclick="OvertimeClicked">
+            <div class="card border-danger">
+                <div class="card-header"><i class="bi bi-stopwatch-fill text-danger"></i>
+                    OverTime
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        @OvertimeCount
+                        <span class="visually-hidden">Overtime Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 cursorStyle" @onclick="HealthClicked">
+            <div class="card border-warning" >
+                <div class="card-header"><i class="bi bi-hospital text-warning"></i>
+                    Doctor
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning">
+                        @HealthCount
+                        <span class="visually-hidden">Doctor Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 cursorStyle" @onclick="SanctionClicked">
+            <div class="card border-info">
+                <div class="card-header"><i class="bi bi-x-octagon text-info"></i>
+                    Sanction
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-info">
+                        @SanctionCount
+                        <span class="visually-hidden">Sanctions Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 cursorStyle" @onclick="UserClicked">
+            <div class="card border-dark">
+                <div class="card-header"><i class="bi bi-person text-dark"></i>
+                    User
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
+                        @UserCount
+                        <span class="visually-hidden">User Numbers</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<style>
+    .cursorStyle{
+        cursor:pointer;
+    }
+
+</style>
+
+
+@code{
+    private int UserCount;
+    private int EmployeeCount;
+    private int OvertimeCount;
+    private int SanctionCount;
+    private int VactionCount;
+    private int HealthCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        sectionState.Action += StateHasChanged;
+        await loadDefualts();
+    }
+
+    private async Task<int> GetEmployeeCount() {
+
+        var employees = await _employeeService.GetAll(Constants.EmployeeBaseUrl);
+        return employees.Count;
+    }
+
+    private async Task<int> GetDepartmentCount()
+    {
+
+        var departments = await _departmentService.GetAll(Constants.DepartmentBaseUrl);
+        return departments.Count;
+    }
+
+    private async Task<int> GetOvertimeCount()
+    {
+
+        var overTimes = await _overtimeService.GetAll(Constants.OvertimeBaseUrl);
+        return overTimes.Count;
+    }
+
+    private async Task<int> GetSanctionCount()
+    {
+
+        var sanctions = await _sanctionService.GetAll(Constants.SanctionBaseUrl);
+        return sanctions.Count;
+    }
+
+
+    private async Task<int> GetVactionCount()
+    {
+        var vactions = await _vactionService.GetAll(Constants.VacationBaseUrl);
+        return vactions.Count;
+    }
+
+
+
+    private async Task<int> GetDoctorCount()
+    {
+
+        var health = await _doctorService.GetAll(Constants.DoctorBaseUrl);
+        return health.Count;
+    }
+
+    private async Task loadDefualts()
+    {
+        HealthCount = await GetDoctorCount();
+        VactionCount = await GetVactionCount();
+        SanctionCount = await GetSanctionCount();
+        UserCount = await GetDepartmentCount();
+        EmployeeCount = await GetEmployeeCount();
+        OvertimeCount = await GetOvertimeCount();
+    }
+
+
+    void HealthClicked() => sectionState.HealthClicked();
+    void OvertimeClicked() => sectionState.OvertimeClicked();
+    void SanctionClicked() => sectionState.SanctionClicked();
+    void VacationClicked() => sectionState.VactionClicked();
+    void EmpClicked() => sectionState.EmployeeClicked();
+    void UserClicked() => sectionState.UserClicked();
+
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+}

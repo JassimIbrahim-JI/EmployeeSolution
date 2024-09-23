@@ -1,0 +1,211 @@
+﻿@implements IDisposable
+
+
+
+@if (sectionState.ShowDepartment)
+{
+    <MudPaper Class="mt-5" Elevation="1">
+        <MudTable Items="@Departments.Take(4)" @bind-SelectedItem="Dept"
+                  Bordered="true" Dense="@dense" Hover="@hover" Filter="new Func<Department, bool>(FilterAsync)" SortLabel="Sort By">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Class="float-start me-4">
+                    Departments
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddButtonClicked" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Primary">Add Department</MudButton>
+                <MudSpacer />
+                <MudTextField Placeholder="Search"
+                              Adornment="Adornment.Start"
+                              IconSize="Size.Small"
+                              Class="mt-0"
+                              FullWidth="false"
+                              Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              @bind-Value="searchString">
+
+                </MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Department, object>(x=>x.Name)">#</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Department, object>(x=>x.Name)">Id</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Department, object>(x=>x.Name)">Department</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Department, object>(x=>x.Name)">General Department</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Department, object>(x=>x.Name)">Actions</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="#">@((Departments.IndexOf(context) + 1))</MudTd>
+                <MudTd DataLabel="Id">@context.Id</MudTd>
+                <MudTd DataLabel="Department">@context.Name</MudTd>
+                <MudTd DataLabel="General Department">@context.GeneralDepartment!.Name</MudTd>
+
+                <MudTd DataLabel="Actions">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" id="cursorStyle" @onclick="()=>EditClicked(context)"></MudIcon>
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" id="cursorStyle" @onclick="()=>DeleteClicked(context)"></MudIcon>
+                    </MudItem>
+                </MudTd>
+
+
+
+            </RowTemplate>
+
+        </MudTable>
+    </MudPaper>
+}
+
+
+<style>
+    #cursorStyle{
+        cursor:pointer;
+    }
+</style>
+
+<DepartmentDialog @ref="departmentDialog" HandleSaveOperationEvent="HandleSaveOperationEvent"
+    Dept="Dept" GeneralDepartments="GeneralDepartments"/>
+
+@code {
+    private Department Dept = new();
+
+    public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
+    public List<Department> Departments { get; set; } = new();
+
+    public string Title { get; set; } = "Add";
+    DepartmentDialog? departmentDialog;
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+    private bool FilterAsync(Department department)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{department.Name}".Contains(searchString)) return true;
+        if ($"{department.Id}".Contains(searchString)) return true;
+        if ($"{department.GeneralDepartment?.Name}".Contains(searchString)) return true;
+
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetDepartments();
+        await GetGeneralDepartment();
+        StateHasChanged();
+        sectionState.Action += StateHasChanged;
+    }
+
+    private async Task GetDepartments()
+    {
+        Departments = await _departmentService.GetAll(Constants.DepartmentBaseUrl);
+    }  
+    private async Task GetGeneralDepartment()
+    {
+        GeneralDepartments = await _generalDepartmentService.GetAll(Constants.GeneralDepartmentBaseUrl);
+    }
+
+    private void AddButtonClicked()
+    {
+        departmentDialog?.ChangeTitle("Add");
+        Dept = new();
+        OpenDialog();
+    }
+
+    public void OpenDialog()
+    {
+        departmentDialog?.OpenDialog();
+    }
+
+    private async Task HandleSaveOperationEvent(Department department)
+    {
+        bool successCheck = false;
+        if (department.Id > 0)
+        {
+            var result = await _departmentService.Update(department, Constants.DepartmentBaseUrl);
+            successCheck = await DisplayMessage(result.Successd, result.Message);
+        }
+        else
+        {
+            var response = await _departmentService.Insert(department, Constants.DepartmentBaseUrl);
+            successCheck = await DisplayMessage(response.Successd, response.Message);
+        }
+
+        if(successCheck)
+        {
+            Dept = new();
+            await GetDepartments();
+            departmentDialog?.ChangeTitle("Add");
+            departmentDialog!.CloseDialog();
+        }
+    }
+
+    private void EditClicked(Department dep)
+    {
+        departmentDialog?.ChangeTitle("Update");
+        Dept = dep;
+        OpenDialog();
+    }
+
+    private async Task DeleteClicked(Department dep)
+    {
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are You sure?",
+                Text = "You will not be able to recover this user!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              $"the{dep.Name} has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _departmentService.Delete(dep.Id,Constants.DepartmentBaseUrl);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                await GetDepartments();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              $"{dep.Name} is safe :)",
+              SweetAlertIcon.Error
+              );
+        }
+    }
+
+    private async Task<bool>DisplayMessage(bool Successd, string Message)
+    {
+        if(Successd)
+        {
+            await dialogService.ShowMessageBox("Success Operation", Message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!", Message);
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+}

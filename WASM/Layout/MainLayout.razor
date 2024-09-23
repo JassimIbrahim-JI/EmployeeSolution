@@ -1,0 +1,113 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using WASM.Pages.OtherPages
+@inherits LayoutComponentBase
+@attribute [Authorize]
+
+<MudLayout>
+    <MudAppBar Elevation="3">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e)=>DrawerToggle())"></MudIconButton>
+       
+        <main>
+
+            <div style="background-color:transparent; width:auto; border:none" class="d-flex align-items-center top-row px-4">
+                
+                <MudToggleIconButton Class="me-1" @bind-Toggled="@_isDarkMode" Icon="@Icons.Material.Filled.DarkMode"
+                                     Color="Color.Inherit" ToggledIcon="@Icons.Material.Filled.WbSunny" ToggledColor="Color.Tertiary" />
+                
+             <ProfileDropdown>
+                   
+            </ProfileDropdown>
+            </div>
+          </main>
+        
+    </MudAppBar>
+    <MudDrawer Elevation="1" @bind-Open="@_drawerOpen">
+        <MudDrawerHeader>
+            <MudAvatar Color="Color.Transparent" Size="Size.Medium">
+                <MudImage Src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp" Alt="Admin Image"/>
+            </MudAvatar>
+            <MudText Typo="Typo.h6" Color="Color.Primary" Style="margin-top:8px; margin-left:8px;">Emp System</MudText>
+        </MudDrawerHeader>
+        <MudDrawerContainer Class="mt-2">
+            <NavMenu />
+        </MudDrawerContainer>
+       
+    </MudDrawer>
+    <MudMainContent Class="main-container">
+       
+    <MudContainer MaxWidth="MaxWidth.Large" Class="content py-4">
+         @Body         
+    </MudContainer>
+    </MudMainContent>
+
+    <MudAppBar Elevation="1" Style="top: auto; bottom: 0; text-align: center;" Dense="true" Fixed="true">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                <MudText Style="font-size:small; text-align: center; width: 100%;">
+                    Copyright &copy; 2024 - Developed by Jassim
+                </MudText>
+            </MudItem>
+        </MudGrid>
+    </MudAppBar>
+</MudLayout>
+
+
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="customTheme" />
+<MudSnackbarProvider />
+<MudDialogProvider />
+<MudPopoverProvider />
+
+<style>
+    .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: fixed;
+    bottom: 0;
+   
+    margin-bottom:1.1rem;
+}
+
+</style>
+
+@code{
+    private bool _isDarkMode;
+
+    MudTheme customTheme = new MudTheme()
+    {
+
+        PaletteLight = new PaletteLight()
+        {
+            Primary = Colors.DeepPurple.Darken2,
+            Secondary = Colors.Green.Accent4,
+            AppbarBackground = Colors.BlueGray.Darken3,
+          
+        },
+        PaletteDark = new PaletteDark()
+        {
+                Primary = Colors.Blue.Darken3,
+                Secondary = Colors.Green.Accent4,
+                AppbarBackground = Colors.BlueGray.Darken3,
+                DrawerIcon="#64B5F6",
+                Dark="#FCE570",
+                
+        },
+    };
+
+    bool _drawerOpen = false;
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task LogoutAsync()
+    {
+        var logoutModel = new UserSession();
+        var customAuthentication = (CustomAuthenticationState)authState;
+        await customAuthentication.UpdateAuthenticationState(logoutModel);
+        _Navi.NavigateTo("/", forceLoad: true);
+    }
+
+
+
+}

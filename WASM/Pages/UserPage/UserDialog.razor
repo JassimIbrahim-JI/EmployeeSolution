@@ -1,0 +1,80 @@
+﻿
+      <MudDialog Style="width:280px" @bind-Visible="IsVisible">
+          
+          <TitleContent>
+              <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+                Manage User
+              </MudText>
+          </TitleContent>
+
+          <DialogContent>
+            <EditForm Model="Manage" Enhance OnValidSubmit="Save">
+                <DataAnnotationsValidator/>
+
+            <MudTextField Label="Username" Disabled ReadOnly="true" HelperText="Max. 8 characters"
+                          @bind-Value="@Manage.Name" For="@(() => Manage.Name)" />
+            <MudTextField Label="Email" Disabled ReadOnly="true"
+                          @bind-Value="@Manage.Email" For="@(() => Manage.Email)" />
+            <MudSelect Class="mt-3" T="string" @bind-Value="@Manage.Role" Label="Select a Role" AnchorOrigin="Origin.BottomCenter">
+
+                @foreach (var role in SystemRoles)
+                {
+                    <MudSelectItem T="string" Value="@role.Name">@role.Name</MudSelectItem>
+                }
+
+            </MudSelect>
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+               
+            </MudItem>
+            
+            </EditForm>
+        
+       </DialogContent> 
+       </MudDialog>
+         
+          
+       
+
+
+
+@code {
+
+    [Parameter] public ManageUser Manage { get; set; } = new();
+    [Parameter] public List<SystemRole> SystemRoles { get; set; } = new();
+    [Parameter] public EventCallback<ManageUser> HandleOpertationSaveEvent{ get; set; }
+
+    public bool IsVisible { get; set; } = false;
+
+    public void CloseDialog() 
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrEmpty(Manage.Name) || string.IsNullOrEmpty(Manage.Role))
+        {
+            await dialogService.ShowMessageBox("Alert!", "You need to provide role name.");
+        }
+        else
+        {
+            await HandleOpertationSaveEvent.InvokeAsync(Manage);
+        }
+    }
+
+    private async Task ForceLoadDRoles() =>
+    SystemRoles = await _accountService.GetRoles();
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadDRoles();
+        StateHasChanged();
+    }
+
+}

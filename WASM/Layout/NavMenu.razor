@@ -1,0 +1,228 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<MudNavMenu>
+    <MudNavLink Match="NavLinkMatch.All" OnClick="HomeClicked" class="cusorStyle" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <MudNavGroup @onclick="ShowAdminMenuContainer" Icon="@Icons.Material.Filled.LockPerson" Title="Administration" Expanded="true">
+                <MudNavLink OnClick="UserClicked" Icon="@Icons.Material.Filled.People" Match="NavLinkMatch.Prefix">Users</MudNavLink>
+              @*  <MudNavLink Href="/security" Icon="@Icons.Material.Filled.Security" Match="NavLinkMatch.Prefix">Security</MudNavLink>*@
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+    <MudNavGroup @onclick="ShowDepartmentContainer" Title="Manage Sections" Icon="@Icons.Material.Filled.DataUsage" Expanded="true">
+        <MudNavLink OnClick="GeneralDepartmentClicked" Icon="@Icons.Material.Filled.LocalFireDepartment" Match="NavLinkMatch.Prefix">General Dept</MudNavLink>
+        <MudNavLink OnClick="DepartmentClicked" Icon="@Icons.Material.Filled.Group" Match="NavLinkMatch.Prefix">Department</MudNavLink>
+        <MudNavLink OnClick="BranchClicked" Icon="@Icons.Material.Filled.AreaChart" Match="NavLinkMatch.Prefix">Branch</MudNavLink>
+  
+            <hr />
+       
+        <MudNavLink OnClick="CountryClicked" Icon="@Icons.Material.Filled.AddLocation" Match="NavLinkMatch.Prefix">Countries</MudNavLink>
+        <MudNavLink OnClick="CityClicked" Icon="@Icons.Material.Filled.LocationCity" Match="NavLinkMatch.Prefix">Cities</MudNavLink>
+        <MudNavLink OnClick="TownClicked" Icon="@Icons.Material.Filled.MyLocation" Match="NavLinkMatch.Prefix">Towns</MudNavLink>
+      
+        <hr />
+    
+    <MudNavLink OnClick="EmployeeClicked" Icon="@Icons.Material.Filled.Person" Match="NavLinkMatch.Prefix">Employees</MudNavLink>
+
+            <hr />
+        
+        <MudNavLink OnClick="OverTimeTypeClicked"Icon="@Icons.Material.Filled.Timer" Match="NavLinkMatch.Prefix">Overtime</MudNavLink>
+        <MudNavLink OnClick="VacationTypeClicked" Icon="@Icons.Material.Filled.HolidayVillage" Match="NavLinkMatch.Prefix">Vaction</MudNavLink>
+        <MudNavLink OnClick="SanctionTypeClicked" Icon="@Icons.Material.Filled.Sanitizer" Match="NavLinkMatch.Prefix">Sanction</MudNavLink>
+     
+
+    </MudNavGroup>
+</MudNavMenu>
+
+
+@* <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3" style="margin-top:@DepartmentMargin">
+                <NavLink class="nav-link p-2" @onclick="ShowDepartmentContainer" style="cursor:pointer" href="javascript::void()">
+                    <div class="hstack gap-1">
+                        <span class="bi bi-backpack4-fill fs-3 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                        <span>Manage Sections</span>
+                    </div>
+                </NavLink>
+                <div class="nav-link p-2 text-white" style="margin-left:2rem; visibility:@DepartmentCssStyle">
+                    <ul class="list-group">
+
+                        <li style="list-style:none" class="cusorStyle">
+                              <a class="nav-link p-2" @onclick="GeneralDepartmentClicked">
+                                  <div class="hstack text-nowrap">
+                                      <span class="bi bi-file-medical fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                      <span class="fs-6">General Dept</span>
+                                  </div>
+                              </a>
+                        </li>
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="DepartmentClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-substack fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Department</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="BranchClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-chevron-bar-contract fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Branch</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <li style="list-style:none">
+                                <hr />
+                            </li>
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="CountryClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-geo-alt fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Country</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="CityClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-pin-map-fill fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>City</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="TownClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-geo fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Town</span>
+                                    </div>
+                                </a>
+                            </li>
+
+
+                            <li style="list-style:none">
+                                <hr />
+                            </li>
+
+
+                            <li style="list-style:none" class="cusorStyle">
+                                <a class="nav-link p-2" @onclick="EmployeeClicked">
+                                    <div class="hstack text-wrap">
+                                        <span class="bi bi-people-fill fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                        <span>Employee</span>
+                                    </div>
+                                </a>
+                            </li>
+
+                    <li style="list-style:none">
+                        <hr />
+                    </li>
+
+
+                    <li style="list-style:none" class="cusorStyle">
+                        <a class="nav-link p-2" @onclick="OverTimeTypeClicked">
+                            <div class="hstack text-wrap">
+                                <span class="bi bi-stopwatch fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <span>Overtime</span>
+                            </div>
+                        </a>
+                    </li>
+                    <li style="list-style:none" class="cusorStyle">
+                        <a class="nav-link p-2" @onclick="SanctionTypeClicked">
+                            <div class="hstack text-wrap">
+                                <span class="bi bi-x-octagon fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <span>Sanction</span>
+                            </div>
+                        </a>
+                    </li>
+                    <li style="list-style:none" class="cusorStyle">
+                        <a class="nav-link p-2" @onclick="VacationTypeClicked">
+                            <div class="hstack text-wrap">
+                                <span class="bi bi-backpack3 fs-5 text-center" aria-hidden="true" style="margin-top:-2rem"></span>
+                                <span>Vacation</span>
+                            </div>
+                        </a>
+                    </li>
+                      
+                    </ul>
+                </div>
+            </div>
+     </nav>
+</div> *@
+
+
+<style>
+    .cusorStyle{
+        cursor:pointer
+    }
+</style>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    public string DepartmentMargin { get; set; } = "-3.5rem";
+    private string CssStyle = "hidden";
+    public bool ShowHide { get; set; } = false;
+
+    private string DepartmentCssStyle = "hidden";
+    public bool ShowHideDepratment { get; set; } = false; 
+
+
+    private void ShowAdminMenuContainer()
+    {    //Set to true(show)
+        ShowHide = !ShowHide;     
+        if(ShowHide)
+        {
+            DepartmentMargin = "0";
+            CssStyle = "visible";
+        }
+        else
+        {
+            DepartmentMargin = "-3.5rem";
+            CssStyle = "hidden";
+        }
+
+    }
+
+    private void ShowDepartmentContainer()
+    {
+        ShowHideDepratment = !ShowHideDepratment;
+        if(ShowHideDepratment)
+        {
+            DepartmentCssStyle = "visible";
+        }
+        else
+        {
+            DepartmentCssStyle = "hidden";
+        }
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private void GeneralDepartmentClicked() => sectionState.GeneralDepartmentClicked();
+    private void DepartmentClicked() => sectionState.DepartmentClicked();
+    private void BranchClicked() => sectionState.BranchClicked();
+    private void CountryClicked() => sectionState.CountryClicked();
+    private void CityClicked() => sectionState.CityClicked();
+    private void TownClicked() => sectionState.TownClicked();
+    private void EmployeeClicked() => sectionState.EmployeeClicked();
+    private void UserClicked() => sectionState.UserClicked();
+    private void OverTimeTypeClicked() => sectionState.OvertimeTypeClicked();
+    private void SanctionTypeClicked() => sectionState.SanctionTypeClicked();
+    private void VacationTypeClicked() => sectionState.VactionTypeClicked();
+    private void HomeClicked() => sectionState.EmployeeClicked();
+
+}

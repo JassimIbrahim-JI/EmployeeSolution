@@ -1,0 +1,51 @@
+﻿@page "/home/dashboard"
+@using WASM.Pages.ContentPages.DepartmentPages
+@using WASM.Pages.ContentPages.ProfilePages
+@using WASM.Pages.EmployeePages
+@using WASM.Pages.LocationPages
+@using WASM.Pages.OtherPages
+@using WASM.Pages.OtherPages.DoctorPages
+@using WASM.Pages.OtherPages.OvertimePages
+@using WASM.Pages.OtherPages.SanctionPages
+@using WASM.Pages.OtherPages.VactionPages
+@using WASM.Pages.UserPage
+
+@layout MainLayout
+
+<TableBanner/>
+<UserPage />
+<GeneralDepartmentPage/>
+<DepartmentPage/>
+<BranchPage/>
+<CountryPage/>
+<CityPage/>
+<TownPage/>
+<EmpPage/>
+<DoctorPage/>
+<OvertimePage/>
+<OvertimeTypePage/>
+<SanctionPage/>
+<SanctionTypePage/>
+<VactionPage/>
+<VactionTypePage/>
+<ProfilePage/>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckUserAuthentication();
+    }
+
+    private async Task CheckUserAuthentication()
+    {
+        var user = (await AuthenticationState).User;
+        if(!user.Identity!.IsAuthenticated)
+        {
+            _Navi.NavigateTo("/identity/account/login");
+        }
+
+    }
+}

@@ -1,0 +1,498 @@
+﻿
+@using System.Net.Http.Headers
+@implements IDisposable
+@using MudBlazor
+
+@if (sectionState.ShowEmployee)
+{
+    if(ShowAddOrUpdateEmployee)
+    {
+        <div class="container">
+            <div class="row mt-5">
+                <div class="col-lg-1 text-center">
+                    <i class="bi bi-x-lg fs-3 fw-bold text-danger" style="cursor:pointer" @onclick="CloseFrom"></i>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <h2>@Title Employee</h2>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12-lg mt-2 mb-5 d-flex justify-content-center">
+                    <div class="hstack">
+                        @if (FirstLayer)
+                        {
+                            <div class="@FloatingNumber1 text-center">1</div>
+                            <div class="@FloatingDiv1 format-border"></div>
+                            <div class="@FloatingNumber2 text-center">2</div>
+                            <div class="@FloatingDiv2 format-border"></div>
+                        }
+                        @if (SecondLayer)
+                        {
+                            <div class="@FloatingNumber1 text-center">1</div>
+                            <div class="@FloatingDiv1 format-border"></div>
+                            <div class="@FloatingNumber1 text-center">2</div>
+                            <div class="@FloatingDiv1 format-border"></div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-12-lg">
+                    <div class="container-fluid">
+                        @if (FirstLayer)
+                        {
+                            <EditForm Model="EmployeeGroup1" OnValidSubmit="Form1">
+                                <DataAnnotationsValidator />
+                                <div class="row">
+                                    <div class="col-lg-2"></div>
+                                    <div class="col-lg-4">
+                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Personal Information</div>
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                <label class="form-label">Fullname</label>
+                                                <InputText @bind-Value="EmployeeGroup1.Name" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.Name" class="text-danger" />
+                                            </div>
+                                            <div class="form-group mt-2">
+                                                <label class="form-label">Telephone</label>
+                                                <InputText @bind-Value="EmployeeGroup1.TelephoneNumber" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.TelephoneNumber" class="text-danger" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="form-label">Address</label>
+                                                <InputTextArea @bind-Value="EmployeeGroup1.Address" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.Address" class="text-danger" />
+                                            </div>
+                                            <div class="form-control mt-2">
+                                                @if (EmployeeGroup1.Photo != null)
+                                                {
+                                                    <img src="@EmployeeGroup1.Photo" width="100" height="100" />
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 mt-2">
+
+                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Other Information</div>
+                                        <div class="card-body">
+
+                                            <div class="form-group">
+                                                <label class="form-label">Civil Id</label>
+                                                <InputText @bind-Value="EmployeeGroup1.CivilId" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.CivilId" class="text-danger" />
+                                            </div>
+
+                                            <div class="form-group mt-2">
+                                                <label class="form-label mt-2">File Number</label>
+                                                <InputText @bind-Value="EmployeeGroup1.FileNumber" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.FileNumber" class="text-danger" />
+                                            </div>
+
+                                            <div class="form-group mt-2">
+                                                <label class="form-label mt-2">
+                                                    @(ImageUploadMessage == "" ? "" : "text-danger")
+                                                    @(ImageUploadMessage == "" ? "Upload Image" : ImageUploadMessage);
+                                                </label>
+
+                                                <InputFile OnChange="UploadImage" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup1.Photo" class="text-danger" />
+                                            </div>
+                                            <div class="form-group mt-5">
+                                                <button class="btn btn-primary float-end mt-4 mb-5" type="submit">
+                                                    <i class="bi bi-arrow-right"></i>
+                                                    Next
+                                                </button>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="col-lg-2"></div>
+                                </div>
+                            </EditForm>
+                        }
+
+                        @if (SecondLayer)
+                        {
+                            <EditForm Enhance Model="EmployeeGroup2" OnValidSubmit="Form2">
+                                <DataAnnotationsValidator />
+                                <div class="row">
+                                    <div class="col-lg-2"></div>
+                                    <div class="col-lg-4">
+                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Job Information</div>
+                                        <div class="card-body">
+
+                                            <div class="form-group mb-2">
+                                                <label class="form-label">Job Name</label>
+                                                <InputText @bind-Value="EmployeeGroup2.JobName" class="form-control" />
+                                                <ValidationMessage For="()=>EmployeeGroup2.JobName" class="text-danger" />
+                                            </div>
+
+                                            <div class="form-group">
+
+                                                @{
+                                                    string generalDepart = GeneralDepartmentStr.Equals("") ? "Select General Departement" : GeneralDepartmentStr;
+                                                }
+
+                                                <MudSelect Required="true" T="int" Label="Select Main Department" ValueChanged="OnGeneralDepartmentValueChange" Placeholder="@generalDepart">
+                                                    @foreach (var gen in GeneralDepartments)
+                                                    {
+                                                        <MudSelectItem Value="@gen.Id">@gen.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+                                            </div>
+
+                                            <div class="form-group mt-3">
+
+                                                @{
+                                                    string Depart = DepartmentStr.Equals("") ? "Select Departement" : DepartmentStr;
+                                                }
+
+                                                <MudSelect T="int" Required="true" Label="Select Department" ValueChanged="OnDepartmentValueChange" Placeholder="@Depart">
+                                                    @foreach (var item in Departments)
+                                                    {
+                                                        <MudSelectItem  Value="@item.Id">@item.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+                                            </div>
+
+                                            <div class="form-group mt-3">
+                                                @{
+                                                    string branch = BranchStr.Equals("") ? "Select Branch" : BranchStr;
+                                                }
+                                               
+
+                                                <MudSelect T="int" Required="true" Label="Select Branch" ValueChanged="OnBranchValueChange" Placeholder="@branch">
+                                                    @foreach (var branch in Branches)
+                                                    {
+                                                        <MudSelectItem Value="@branch.Id">@branch.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+                                            </div>
+
+                                              <div class="form-group mt-4 mb-5">
+                                                <button type="button" class="btn btn-primary float-start" @onclick="PrevClicked">
+                                                    <i class="bi bi-arrow-left"></i>
+                                                    Prev
+                                                </button>
+                                             </div>
+                                        
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="card-title mb-5 fw-bold" style="font-family:Tahoma">Location Information</div>
+                                        <div class="card-body">
+                                            <div class="form-group">
+                                                @{
+                                                    string CountryName = CountryStr.Equals("") ? "Select Country" : CountryStr;
+                                                }
+
+                                               
+
+                                                <MudSelect T="int" Required="true" Label="Select Country" ValueChanged="OnCountryValueChange" Placeholder="@CountryName">
+                                                    @foreach (var item in Countries)
+                                                    {
+                                                        <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+
+                                            </div>
+                                            <div class="form-group mt-3">
+
+                                             
+                                                @{
+                                                    string cityName = CityStr.Equals("") ? "Select City" : CityStr;
+                                                }
+                                                <MudSelect T="int" Required="true" Label="Select City" ValueChanged="OnCityValueChange" Placeholder="@cityName">
+                                                    @foreach (var item in Cities)
+                                                    {
+                                                        <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+                                            </div>
+
+                                            <div class="form-group mt-3">
+                                             
+                                                @{
+                                                    string townName = TownStr.Equals("") ? "Select Town" : TownStr;
+                                                }
+                                                <MudSelect T="int" Required="true" Label="Select Town" ValueChanged="OnTownValueChange" Placeholder="@townName">
+                                                    @foreach (var item in Towns)
+                                                    {
+                                                        <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+
+
+                                            </div>
+                                            <div class="form-group mt-3">
+                                                <label class="form-label">Other</label>
+                                                <textarea @bind="EmployeeGroup2.Other" class="form-control" placeholder="Optional" />
+                                            </div>
+                                            <div class="form-group mt-4 mb-5">
+                                               
+                                                <button class="btn btn-primary float-end" type="submit">
+                                                    <i class="bi bi-save"></i>
+                                                    Save
+                                                </button>
+
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-2"></div>
+                                    </div>
+                                </div>
+                            </EditForm>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+   
+    }
+}
+<style>
+    
+
+ .FloatingDiv{
+     width:500px;
+     background:#228ada;
+     height:10px;
+ }    
+ .FloatingNumber{
+     border-radius:50%;
+     color:white;
+     background:#1d1858;
+     width:20px;
+     height:20px;
+ }
+ .inactive-div{
+     width:500px;
+     background:gray;
+     height:10px;
+ }
+ .inactive-span{
+       border-radius:50%;
+     color:white;
+     background:gray;
+     width:20px;
+     height:20px;
+ }
+
+ .format-border{
+     border-radius:20px;
+ }
+
+
+</style>
+
+
+@code {
+
+    [Parameter] public Employee Employee { get; set; } = new();
+    [Parameter] public bool ShowAddOrUpdateEmployee {get;set;}
+    [Parameter] public EmployeeGroup1 EmployeeGroup1 { get; set; } = new();
+    [Parameter] public EmployeeGroup2 EmployeeGroup2 { get; set; } = new();
+
+    string FloatingNumber1 = "FloatingNumber";
+    string FloatingDiv1 = "FloatingDiv";
+
+    string FloatingNumber2 = "inactive-span";
+    string FloatingDiv2 = "inactive-div";
+
+    public bool FirstLayer { get; set; } = true;
+    public bool SecondLayer { get; set; } = false;
+
+    [Parameter] public List<Country>Countries { get; set; } = new();
+    [Parameter] public List<City>Cities {get;set;} = new();
+    [Parameter] public List<Town> Towns { get; set; } = new();
+    [Parameter] public List<GeneralDepartment> GeneralDepartments {get;set;} = new();
+    [Parameter] public List<Department> Departments { get; set; } = new();
+    [Parameter] public List<Branch> Branches { get; set; } = new();
+    [Parameter] public List<Employee> Employees { get; set; } = new();
+
+    [Parameter] public EventCallback NotifyParentFormCloseClicked { get; set; }
+
+    public string Title { get; set; } = "Add";
+    public string GeneralDepartmentStr { get; set; } = "";
+    public string DepartmentStr { get; set; } = "";
+    public string BranchStr { get; set; } = "";
+    public string TownStr { get; set; } = "";
+    public string CityStr { get; set; } = "";
+    public string CountryStr { get; set; } = "";
+
+    private string ImageUploadMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await loadDefaults();    
+        sectionState.Action += StateHasChanged;
+    }
+
+    private async Task loadDefaults()
+    {
+        Employees = await _employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Countries = await _countryService.GetAll(Constants.CountrytBaseUrl);
+        Cities = await _cityService.GetAll(Constants.CitytBaseUrl);
+        Towns = await _townService.GetAll(Constants.TownBaseUrl);
+        GeneralDepartments = await _generalDepartmentService.GetAll(Constants.GeneralDepartmentBaseUrl);
+        Departments = await _departmentService.GetAll(Constants.DepartmentBaseUrl);
+        Branches = await _branchService.GetAll(Constants.BranchBaseUrl);
+    }
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+
+    public void ShowLayer2()
+    {
+        FirstLayer = false;
+        SecondLayer = true;
+    }
+
+    void PrevClicked()
+    {
+        FirstLayer = true;
+        SecondLayer = false;
+    }
+
+    private async Task CloseFrom()
+    {
+        ShowAddOrUpdateEmployee = false;
+        await NotifyParentFormCloseClicked.InvokeAsync();
+    }
+
+    [Parameter]
+    public EventCallback<int> HandleCountrySelectedEvent { get; set; } 
+    private void OnCountryValueChange(int newValue)
+    {
+        HandleCountrySelectedEvent.InvokeAsync(newValue);
+    }
+
+
+    private int selectedCityId;
+    [Parameter]
+    public EventCallback<int> HandleCitySelectedEvent { get; set; }
+    private async Task OnCityValueChange(int newValue)
+    {
+        selectedCityId = newValue;
+        await HandleCitySelectedEvent.InvokeAsync(newValue);
+    }
+
+    private void OnTownValueChange(int newValue)
+    {
+        EmployeeGroup2.TownId = newValue;
+    }
+
+    [Parameter]
+    public EventCallback<int> HandleGeneralDepartmentSelectedEvent { get; set; }
+    private async Task OnGeneralDepartmentValueChange(int newValue)
+    {
+        await HandleGeneralDepartmentSelectedEvent.InvokeAsync(newValue);
+    }
+
+    [Parameter]
+    public EventCallback<int> HandleDepartmentSelectedEvent { get; set; }
+    private async Task OnDepartmentValueChange(int newValue)
+     => await HandleDepartmentSelectedEvent.InvokeAsync(newValue);
+
+
+    public void OnBranchValueChange(int newValue)
+    {
+        EmployeeGroup2.BranchId = newValue;
+    }
+
+
+    private bool ValidateEmployeeGroup1()
+    {
+        return !string.IsNullOrEmpty(EmployeeGroup1.Name)
+           && !string.IsNullOrEmpty(EmployeeGroup1.TelephoneNumber)
+           && !string.IsNullOrEmpty(EmployeeGroup1.Address)
+           && !string.IsNullOrEmpty(EmployeeGroup1.Photo)
+           && !string.IsNullOrEmpty(EmployeeGroup1.FileNumber)
+           && !string.IsNullOrEmpty(EmployeeGroup1.CivilId);
+    }
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        var imageFiles = e.GetMultipleFiles();
+        foreach (var image in imageFiles)
+        {
+            if(image !=null)
+            {
+                string format = "image/png";
+                var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
+                var buffer = new byte[resizeImage.Size];
+
+                using (var ms = resizeImage.OpenReadStream(resizeImage.Size))
+                {
+                    var content = new MultipartFormDataContent();
+                    content.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data");
+                    content.Add(new StreamContent(ms, Convert.ToInt32(resizeImage.Size)), "image", image.Name);
+                    await resizeImage.OpenReadStream().ReadAsync(buffer);
+                    var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+                    EmployeeGroup1.Photo = imageData;
+                    imageData = "";
+                    ImageUploadMessage = "";
+                    return;
+                }
+            }
+        }
+
+        ImageUploadMessage = "PNG file needed";
+        return;
+    }
+
+
+    private bool ValidateEmployeeGroup2()
+    {
+        return !string.IsNullOrEmpty(EmployeeGroup2.JobName) && EmployeeGroup2.BranchId != 0 && EmployeeGroup2.TownId != 0;
+    }
+
+    [Parameter] public EventCallback<Employee>HandleSaveEmployeeClickedEvent{ get; set; }
+    private void Form1()
+    {
+      
+        if(ValidateEmployeeGroup1())
+        {
+            Employee.Name = EmployeeGroup1.Name;
+            Employee.Address = EmployeeGroup1.Address;
+            Employee.FileNumber = EmployeeGroup1.FileNumber;
+            Employee.TelephoneNumber = EmployeeGroup1.TelephoneNumber;
+            Employee.CivilId = EmployeeGroup1.CivilId;
+            Employee.PhotoUrl = EmployeeGroup1.Photo;
+            ShowLayer2();
+        }
+
+
+    }
+
+    private async Task Form2()
+    {
+        
+        if (ValidateEmployeeGroup2())
+        {
+            Employee.BranchId = EmployeeGroup2.BranchId;
+            Employee.TownId = EmployeeGroup2.TownId;
+            Employee.JobName = EmployeeGroup2.JobName;
+            Employee.Other = EmployeeGroup2.Other;
+            await HandleSaveEmployeeClickedEvent.InvokeAsync(Employee);  
+
+        }
+    }
+
+    public void ClearContent()
+    {
+        Employee = new();
+        EmployeeGroup1 = new();
+        EmployeeGroup2 = new();
+        StateHasChanged();
+    }
+}

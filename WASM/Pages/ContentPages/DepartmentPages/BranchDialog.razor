@@ -1,0 +1,119 @@
+﻿ 
+        <MudDialog Style="width:300px;" @bind-Visible="IsVisible">
+            <TitleContent>
+                <MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+                    @Title Branch
+                </MudText>
+            </TitleContent>
+            <DialogContent>
+                <EditForm Model="BranchModel" Enhance OnValidSubmit="Save">
+                   <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@BranchModel.Id" Disabled="true" ReadOnly="true" Label="BRANCH ID" />
+            <MudTextField @bind-Value="@BranchModel.Name" Label="Name" />
+            <MudSelect Class="mt-3" T="int" SearchFunc="SearchDepartments" @bind-Value="@BranchModel.DepartmentId" Variant="Variant.Outlined" Label="Select Department" AnchorOrigin="Origin.BottomCenter">
+
+                @if(isLoading)
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+                else
+                {
+                    @foreach (var item in Departments)
+                    {
+
+                        <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                    }
+                }
+              
+            </MudSelect>
+
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </MudItem>
+
+        </EditForm>             
+   </DialogContent>
+        
+        </MudDialog>
+      
+
+
+
+@code {
+    [Parameter] public Branch BranchModel { get; set; } = new();
+    [Parameter] public List<Department> Departments { get; set; } = new();
+    [Parameter] public EventCallback<Branch> HandleSaveOperationEvent { get; set; }
+
+
+
+    public bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+    public string searchString;
+    public bool isLoading;
+
+
+    private async Task<bool> SearchDepartments(string searchText)
+    {
+        isLoading = true;
+        await Task.Delay(500);
+        searchString = searchText;
+        Departments = Departments.Where(d => d.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+        isLoading = false;
+        return true;
+    }
+
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(BranchModel.Name) || BranchModel.DepartmentId <= 0)
+        {
+            await dialogService.ShowMessageBox("Alert!","You need to provide Branch name.");
+
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(BranchModel);
+
+            //StateHasChanged()
+            //, components are re-rendered after their events have been triggered; that is, 
+            // there is no need to manually call the StateHasChanged() method to re-render 
+            // the component. It is automatically called by Blazor. But in this case, 
+            // you do need to manually add the StateHasChanged() method 
+            // in order to re-render the component
+
+            //he call to StateHasChanged() would indicate the server that there is a need to rerender 
+            // the component and that would work just fine. In general, 
+            // you should simply avoid using async void 
+            // (unless you know it's truly a fire-and-forget situation) 
+            // and return some type of Task instead, which would eliminate the need for 
+            // the explicit StateHasChanged() call.
+        }
+    }
+
+    private async Task ForceLoadDepartment() =>
+     Departments = await _departmentService.GetAll(Constants.DepartmentBaseUrl);
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadDepartment();
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+  
+}

@@ -1,0 +1,73 @@
+﻿
+    <MudDialog Style="width:300px;" @bind-Visible="IsVisible" >
+        <TitleContent>
+            <MudText>
+                <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+               @Title Employee's Overtime
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+           <EditForm Model="itemModel" Enhance OnValidSubmit="Save">
+              <DataAnnotationsValidator/>
+
+            <MudTextField @bind-Value="itemModel.EmployeeId" Disabled="true" ReadOnly="true" Label="ID" />
+            <MudTextField InputType="InputType.Number" Disabled="true" ReadOnly="true" @bind-Value="itemModel.numOfDays" Label="Number of Days" />
+            <MudDatePicker @bind-Date="itemModel.StartDate" DateFormat="yyyy-MM-dd" MinDate="minDate" MaxDate="maxDate" Label="Start Date" />
+            <MudDatePicker @bind-Date="itemModel.EndDate" For="()=>itemModel.EndDate" Label="End Date" />
+            <MudSelect T="int" Class="mt-3" @bind-Value="itemModel.OverTimeTypeId" Required="true" RequiredError="please select a type" Variant="Variant.Outlined" Label="Select OvertimeType" AnchorOrigin="Origin.BottomCenter">
+                    @foreach (var item in overTimes)
+                    {
+                        <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                    }
+            </MudSelect>
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </MudItem>
+           </EditForm>
+          
+        </DialogContent>
+      
+    </MudDialog>
+
+
+@code {
+    [Parameter] public OverTime itemModel { get; set; } = new();
+    [Parameter] public List<OverTimeType> overTimes { get; set; } = new();
+    [Parameter] public EventCallback<OverTime> HandleSaveOperationEvent { get; set; }
+
+    public string Title { get; set; } = "Add";
+    public bool IsVisible { get; set; } = false;
+
+    private DateTime minDate = new DateTime(2023, 1, 1);
+    private DateTime maxDate = new DateTime(2025, 1, 1);
+
+    private async void Save()
+    {
+        if (itemModel.OverTimeTypeId <= 0)
+            await dialogService.ShowMessageBox("Alert!", "You need to provide type.");
+
+        else
+            await HandleSaveOperationEvent.InvokeAsync(itemModel);
+    }
+
+    private async Task ForceLoadOvertimeType() =>
+    overTimes = await _overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadOvertimeType();
+        StateHasChanged();
+     }
+
+     public void CloseDialog()
+     {
+         IsVisible = false;
+         StateHasChanged();
+     }
+    
+  public void ChangeTitle(string title) => Title = title;
+
+}

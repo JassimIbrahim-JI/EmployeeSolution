@@ -1,0 +1,52 @@
+﻿
+<MudDialog Style="width:280px;" @bind-Visible="IsVisible">
+    <TitleContent>
+
+        <MudText>
+            <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+            @Title Vaction Type
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="vactionType" Enhance OnValidSubmit="Save">
+           <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@vactionType.Name" Label="Name" For="@(()=>vactionType.Name)" />
+            <div class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </div>
+            </EditForm>
+       
+    </DialogContent>
+
+</MudDialog>
+
+
+@code {
+    [Parameter] public VactionType vactionType { get; set; } = new();
+    [Parameter] public EventCallback<VactionType> HandleSaveOperationEvent{ get; set; }
+  
+    public string Title { get; set; } = "Add";
+    public bool IsVisible { get; set; } = false;
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(vactionType.Name))
+            await dialogService.ShowMessageBox("You need to provide Vaction type name.", "Alert!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(vactionType);
+    }
+
+    public void CloseDialog(){
+        IsVisible = false;
+        StateHasChanged();
+    }
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+}

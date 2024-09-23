@@ -1,0 +1,68 @@
+﻿
+
+
+    <MudDialog Style="width:280px" @bind-Visible="IsVisible">
+      
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.AddLocation" Class="mr-3 mb-n1" />
+                @Title Country
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <EditForm Model="countryModel" Enhance OnValidSubmit="Save">
+            <MudTextField @bind-Value="@countryModel.Id" Label="COUNTRY ID" Disabled ReadOnly="true" />
+            <MudTextField @bind-Value="@countryModel.Name" Label="Country Name" />
+            
+        <div class="d-flex mt-3 justify-content-start align-items-center">
+            @* Class="ml-auto" *@
+            <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+            <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+
+        </div>
+        </EditForm>
+        </DialogContent>
+       
+    </MudDialog>
+
+
+         
+
+
+@code {
+    [Parameter] public Country countryModel { get; set; } = new();
+    [Parameter] public EventCallback<Country> HandleSaveOperationEvent { get; set; }
+    private bool IsVisible { get; set; } = false;
+
+
+    public string Title { get; set; } = "Add";
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(countryModel.Name))
+        {
+            await swal.FireAsync("Alert!", "You need to provide country name.");
+
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(countryModel);
+        }
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }  
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,199 @@
+﻿@implements IDisposable
+
+
+@if(sectionState.ShowSanctionType)
+{
+    <MudPaper Class="mt-5" Elevation="1">
+        <MudTable Items="@SanctionTypes.Take(8)" @bind-SelectedItem="sanctionTypeModel"
+                  Bordered="true" Dense="@dense" Hover="@hover" Filter="new Func<SanctionType, bool>(FilterAsync)" SortLabel="Sort By">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Class="float-start me-4">
+                    Sanction Types
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddClicked" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Primary">Add Sanction</MudButton>
+                <MudSpacer />
+                <MudTextField Placeholder="Search"
+                              Adornment="Adornment.Start"
+                              IconSize="Size.Small"
+                              Class="mt-0"
+                              FullWidth="false"
+                              Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              @bind-Value="searchString">
+
+                </MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SanctionType, object>(x=>x.Id)">#</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SanctionType, object>(x=>x.Id)">Id</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<SanctionType, object>(x=>x.Id)">Type</MudTableSortLabel>
+                </MudTh>
+            
+                <MudTh>
+                    Actions
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="#">@((SanctionTypes.IndexOf(context) + 1))</MudTd>
+                <MudTd DataLabel="Id">@context.Id</MudTd>
+                <MudTd DataLabel="Type">@context.Name</MudTd>
+    
+                <MudTd DataLabel="Actions">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Info" id="cursorStyle" @onclick="()=>EditClicked(context)"></MudIcon>
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Warning" id="cursorStyle" @onclick="()=>DeleteClicked(context)"></MudIcon>
+                    </MudItem>
+                </MudTd>
+
+
+
+            </RowTemplate>
+
+        </MudTable>
+    </MudPaper>
+}
+<SanctionTypeDialog @ref="sanctionDialog" HandleSaveOperationEvent="HandleSaveOperationEvent" Sanction="sanctionTypeModel"/>
+
+<style>
+    #cursorStyle{
+        cursor:pointer;
+    }
+</style>
+
+@code {
+
+    SanctionTypeDialog? sanctionDialog;
+    SanctionType sanctionTypeModel = new();
+
+    public List<SanctionType> SanctionTypes { get; set; } = new();
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+    private bool FilterAsync(SanctionType type)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{type.Id}".Contains(searchString)) return true;
+        if ($"{type.Name}".Contains(searchString)) return true;
+      
+
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTypes();
+        sectionState.Action += StateHasChanged;
+    }
+
+
+
+    private void OpenDialog()
+    {
+        sanctionDialog?.OpenDialog();
+    }
+
+    void AddClicked()
+    {
+        sanctionDialog?.ChangeTitle("Add");
+        sanctionTypeModel = new();
+        OpenDialog();
+    }
+    private void EditClicked(SanctionType doc)
+    {
+        sanctionDialog?.ChangeTitle("Update");
+        sanctionTypeModel = doc;
+        OpenDialog();
+    }
+
+    private async Task DeleteClicked(SanctionType doc)
+    {
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are You sure?",
+                Text = $"You will not be able to recover {doc.Name}!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              $"{doc.Name} has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _sanctionTypeService.Delete(doc.Id, Constants.SanctionTypeBaseUrl);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                await GetTypes();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              $"{doc.Name} is safe :)",
+              SweetAlertIcon.Error
+              );
+        }
+    }
+
+    private async Task HandleSaveOperationEvent(SanctionType sanction)
+    {
+        bool SuccessCheck = false;
+        if(sanction.Id > 0)
+        {
+            var result = await _sanctionTypeService.Update(sanction, Constants.SanctionTypeBaseUrl);
+            SuccessCheck = await DisplayMessage(result.Successd,result.Message);
+        }
+        else
+        {
+            var result = await _sanctionTypeService.Insert(sanction, Constants.SanctionTypeBaseUrl);
+            SuccessCheck = await DisplayMessage(result.Successd, result.Message);
+        }
+
+        if (SuccessCheck)
+        {
+            sanctionTypeModel = new();
+            await GetTypes();
+            sanctionDialog?.ChangeTitle("Add");
+            sanctionDialog!.CloseDialog();
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool success, string message)
+    {
+        if (success)
+        {
+            await dialogService.ShowMessageBox("Success Operation", message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!",message);
+            return false;
+        }
+    }
+
+    //Execl Export / PDF Export
+
+
+ 
+    private async Task GetTypes() => SanctionTypes = await _sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+
+}

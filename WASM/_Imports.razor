@@ -1,0 +1,50 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using BaseLibrary.Class.Entities
+@using ClientLibrary.Services.Contracts
+@using ClientLibrary.Services.Implementations
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using WASM
+@using WASM.ApplicationStates
+@using WASM.Layout
+@using BaseLibrary.Class.DTOs
+@using ClientLibrary.Helpers
+@using Microsoft.AspNetCore.Components.Authorization
+@using CurrieTechnologies.Razor.SweetAlert2
+@using MudBlazor
+
+@inject NavigationManager _Navi
+@inject IDialogService dialogService
+@* User Authentication & Authentication State *@
+@inject IUserAcountService _accountService
+@inject AuthenticationStateProvider authState
+
+@*SweetAlert2 dialog service*@
+ @inject SweetAlertService swal
+
+@inject IGenaricService<GeneralDepartment> _generalDepartmentService
+@inject IGenaricService<Department> _departmentService
+@inject IGenaricService<Branch> _branchService
+
+@inject IGenaricService<Country> _countryService
+@inject IGenaricService<City> _cityService
+@inject IGenaricService<Town> _townService
+
+@inject IGenaricService<Doctor> _doctorService
+@inject IGenaricService<OverTime> _overtimeService
+@inject IGenaricService<OverTimeType> _overtimeTypeService
+@inject IGenaricService<Sanction> _sanctionService
+@inject IGenaricService<SanctionType> _sanctionTypeService
+@inject IGenaricService<Vaction> _vactionService
+@inject IGenaricService<VactionType> _vactionTypeService
+
+
+@inject IGenaricService<Employee> _employeeService
+
+ @* Navbar Tabs communication state handling *@
+@inject AllSectionState sectionState

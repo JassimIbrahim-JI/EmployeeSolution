@@ -1,0 +1,547 @@
+﻿@using OfficeOpenXml
+@using WASM.Pages.OtherPages
+@using WASM.Pages.OtherPages.DoctorPages
+@using WASM.Pages.OtherPages.OvertimePages
+@using WASM.Pages.OtherPages.SanctionPages
+@using WASM.Pages.OtherPages.VactionPages
+@implements IDisposable
+@inject IJSRuntime JS
+
+@if(sectionState.ShowEmployee)
+{
+    @if(ShowMainPage)
+    {  
+       <MudPaper Class="mt-8" Elevation="1">
+            <MudTable Items="@pagedEmployess" @bind-SelectedItem="employee"
+                      Bordered="true" Dense="@dense" Hover="@hover" 
+                      Filter="new Func<Employee, bool>(FilterAsync)" 
+                          SortLabel="Sort By">
+
+                <ToolBarContent>
+                  
+
+                    <MudText Typo="Typo.h6" Class="float-start me-4">
+                        Employees
+                    </MudText>
+                    
+                    <MudButton Size="Size.Small" Class="me-2" OnClick="() => ShowAddOrUpdateEmployeeButtonClicked(true)" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Primary">Add Employee</MudButton>
+                
+                    <MudButton Size="Size.Small" OnClick="ExportToExcel" StartIcon="@Icons.Material.Filled.FileDownload" Color="Color.Primary">
+                     Export    
+                    </MudButton>
+                    <MudSpacer />
+                    <MudTextField Placeholder="Search"
+                                  Adornment="Adornment.Start"
+                                  IconSize="Size.Small"
+                                  Class="mt-0"
+                                  FullWidth="false"
+                                  Immediate="true"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  @bind-Value="searchString">
+
+                    </MudTextField>
+                  
+                </ToolBarContent>
+
+            
+                <HeaderContent>
+                   
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<Employee, object>(x=>x.Name)">Image</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<Employee, object>(x=>x.Name)">Civil Id</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<Employee, object>(x=>x.Name)">Name</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<Employee, object>(x=>x.Name)">Job</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<Employee, object>(x=>x.Name)">File No.</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        Actions
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    
+                   <MudTd DataLabel="Image"><MudImage Src="@context.PhotoUrl" Width="40" Height="40" Alt="emp image" Class="custom-image" /></MudTd>
+                    <MudTd DataLabel="Civil Id">@context.CivilId</MudTd>
+     
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Job">@context.JobName</MudTd>
+                    <MudTd DataLabel="File No.">@context.FileNumber</MudTd>
+
+                    <MudTd DataLabel="Actions">
+                        <MudItem>
+                            <MudIcon Icon="@Icons.Material.Filled.Menu" id="cursorStyle" @onclick="()=>ShowMenuPopUp(context)"></MudIcon>
+       
+                        </MudItem>
+                    </MudTd>
+                </RowTemplate>
+                <FooterContent>
+                    <MudTablePager RowsPerPageString="5"/>
+                </FooterContent>
+
+            </MudTable>
+        </MudPaper>   
+    @*  <div style="display: flex; justify-content: center; align-items: center; height: 70vh;">   
+    </div> *@
+    }
+    
+}
+
+<style>
+
+    #cursorStyle {
+        cursor:pointer;
+    }
+
+    .custom-image {
+        border-radius: 40%;   
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s;
+    }
+
+    .custom-image:hover {
+        transform: scale(1.1);
+    }
+
+</style>
+
+
+
+<AddOrUpdateEmployeePage 
+    @ref="AddOrUpdateEmployee"
+    ShowAddOrUpdateEmployee="ShowAddOrUpdatePage"
+    Employee="employee"
+    NotifyParentFormCloseClicked="NotifyParentFormCloseClicked"
+    Employees="Employees"
+    Countries="DefaultCountries"
+    Cities="SelectedCities"
+    Towns="SelectedTowns"
+    GeneralDepartments="DefaultGeneralDepartemtns"
+    Departments="SelectedDepartments"
+    Branches="SelectedBranches"
+    HandleCitySelectedEvent="HandleCitySelectedEvent"
+    HandleCountrySelectedEvent="HandleCountrySelectedEvent"
+    HandleGeneralDepartmentSelectedEvent="HandleGeneralDepartmentSelectedEvent"
+    HandleDepartmentSelectedEvent="HandleDepartmentSelectedEvent"
+    HandleSaveEmployeeClickedEvent="HandleSaveEmployeeClickedEvent" />
+
+<EmployeeDetailPage
+    EmployeeDetails="employee"
+    ShowDetailPage="ShowDetailsPage"
+    HandleDetailsPageCloseBtnClicked="DetailsPageCloseBtnClicked" />
+
+    @*menu*@
+<ContextMenu 
+    @ref="contextMenu"
+    HandleViewClicked="ViewClicked"
+    HandleEditClicked="EditClicked"
+    HandleDeleteClicked="DeleteClicked"
+    HandleAddHealthClicked="AddHealthClicked"
+    HandleAddOvertimeClicked="AddOvertimeClicked"
+    HandleAddSanctionClicked="AddSanctionClicked"
+    HandleAddVacationClicked="AddVactionClicked" />
+
+
+    @*dialogs*@
+
+<DoctorDialog 
+    @ref="doctorDialog"
+    Doctor="Doctor" 
+    HandleSaveOperationEvent="SaveHealthEvent" />
+
+<OvertimeDialog 
+    @ref="overtimeDialog"
+    itemModel="OverTime" 
+    overTimes="overTimes" 
+    HandleSaveOperationEvent="SaveOvertimeEvent" />
+
+<SanctionDialog @ref="sanctionDialog"
+    itemModel="sanction"
+    SanctionTypes="sanctionTypes" 
+    HandleSaveOperationEvent="SaveSanctionEvent" />
+
+<VactionDialog
+    @ref="vactionDialog"
+    Vaction="vaction" 
+    VactionTypes="vactionTypes"
+    HandleSaveOperationEvent="CreateVactionEvent" />
+
+@code {
+
+    AddOrUpdateEmployeePage? AddOrUpdateEmployee;
+    public List<Employee> Employees { get; set; } = new();
+    public Employee employee { get; set; } = new();
+
+    public bool ShowMainPage { get; set; } = true;
+    public bool ShowAddOrUpdatePage { get; set; } = false;
+
+
+    public List<Country> DefaultCountries { get; set; } = [];
+    public List<City> DefaultCities { get; set; } = [];
+    public List<Town> DefaultTowns { get; set; } = [];
+
+    public List<GeneralDepartment> DefaultGeneralDepartemtns { get; set; } = [];
+    public List<Department> DefaultDepartments { get; set; } = [];
+    public List<Branch> DefaultBranchs { get; set; } = [];
+
+    public List<Branch> SelectedBranches { get; set; } = [];
+    public List<City> SelectedCities { get; set; } = [];
+    public List<Town> SelectedTowns { get; set; } = [];
+    public List<Department> SelectedDepartments { get; set; } = [];
+
+    ContextMenu? contextMenu;
+    DoctorDialog? doctorDialog;
+    private Doctor Doctor = new();
+
+    private OverTime OverTime = new();
+    OvertimeDialog overtimeDialog;
+    List<OverTimeType> overTimes = [];
+
+    private Sanction sanction = new();
+    List<SanctionType> sanctionTypes = [];
+    SanctionDialog? sanctionDialog;
+
+    private Vaction vaction = new();
+    List<VactionType> vactionTypes = [];
+    VactionDialog? vactionDialog;
+
+    public bool ShowDetailsPage { get; set; } = false;
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+
+    private int pageIndex = 1;
+    private int rowsPerPage = 5;
+    private IEnumerable<Employee> pagedEmployess => Employees.Skip((pageIndex - 1) * rowsPerPage).Take(rowsPerPage);
+
+    private bool FilterAsync(Employee emp)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{emp.Name}".Contains(searchString)) return true;
+        if ($"{emp.Id}".Contains(searchString)) return true;
+        if ($"{emp.FileNumber}".Contains(searchString)) return true;
+        if ($"{emp.CivilId}".Contains(searchString)) return true;
+        if ($"{emp.town!.Name}".Contains(searchString)) return true;
+        if ($"{emp.Address}".Contains(searchString)) return true;
+
+        return false;
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        sectionState.Action += StateHasChanged;
+        await loadEmployee();
+        await loadDefualts();
+        await GetOverTimeTypes();
+        await GetSanctionTypes();
+        await GetVacationTypes();
+    }
+
+    private async Task GetOverTimeTypes() => overTimes = await _overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
+    private async Task GetSanctionTypes() => sanctionTypes = await _sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
+    private async Task GetVacationTypes() => vactionTypes = await _vactionTypeService.GetAll(Constants.VacationsTypeBaseUrl);
+
+
+    private async Task loadEmployee()
+    {
+        Employees = await _employeeService.GetAll(Constants.EmployeeBaseUrl);
+    }
+
+    private async Task loadDefualts()
+    {
+        DefaultCountries = await _countryService.GetAll(Constants.CountrytBaseUrl);
+        DefaultCities = await _cityService.GetAll(Constants.CitytBaseUrl);
+        DefaultTowns = await _townService.GetAll(Constants.TownBaseUrl);
+        DefaultGeneralDepartemtns = await _generalDepartmentService.GetAll(Constants.GeneralDepartmentBaseUrl);
+        DefaultDepartments = await _departmentService.GetAll(Constants.DepartmentBaseUrl);
+        DefaultBranchs = await _branchService.GetAll(Constants.BranchBaseUrl);
+    }
+
+    async Task ShowAddOrUpdateEmployeeButtonClicked(bool isNew, int? employeeId =null)
+    {
+        ShowMainPage = false;
+        ShowAddOrUpdatePage = true;
+        if(isNew)
+        {
+            employee = new();    
+        }
+        else
+        {
+            // Load existing employee data
+            if (employeeId.HasValue)
+            {
+                //employee = Employees.FirstOrDefault(e => e.Id == employeeId.Value);
+                // Alternatively, fetch the employee data from your data source
+               employee = await _employeeService.GetById(employeeId.Value,Constants.EmployeeBaseUrl);
+            }
+        }
+    }
+
+    private async void NotifyParentFormCloseClicked()
+    {
+        ShowMainPage = true;
+        ShowAddOrUpdatePage = false;
+        await loadEmployee();
+        SelectedEmployee = new();
+    }
+
+
+
+
+    private void HandleCountrySelectedEvent(int countryId) =>
+     SelectedCities = DefaultCities.Where(c => c.Id == countryId).ToList();
+
+    private void HandleCitySelectedEvent(int cityId) =>
+       SelectedTowns = DefaultTowns.Where(c => c.Id == cityId).ToList();
+
+    private void HandleGeneralDepartmentSelectedEvent(int GeneralId) =>
+    SelectedDepartments = DefaultDepartments.Where(c => c.Id == GeneralId).ToList();
+
+    private void HandleDepartmentSelectedEvent(int deptId) =>
+       SelectedBranches = DefaultBranchs.Where(c => c.Id == deptId).ToList();
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+
+    public async Task HandleSaveEmployeeClickedEvent(Employee emp)
+    {
+        bool success = false;
+        if (emp.Id > 0)
+        {
+            var result = await _employeeService.Update(emp, Constants.EmployeeBaseUrl);
+            success = await DisplayMessage(result.Successd, result.Message);
+
+        }
+        else
+        {
+            var result = await _employeeService.Insert(emp, Constants.EmployeeBaseUrl);
+            success = await DisplayMessage(result.Successd, result.Message);
+        }
+        if (success)
+        {
+            AddOrUpdateEmployee!.ClearContent();
+           
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool Successd, string Message)
+    {
+        if (Successd)
+        {
+            await dialogService.ShowMessageBox("Success Operation", Message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!", Message);
+            return false;
+        }
+    }
+
+    public Employee SelectedEmployee { get; set; } = new();
+    void ShowMenuPopUp(Employee employee)
+    {
+        SelectedEmployee = employee;
+        contextMenu!.OpenContextMenu();
+    }
+
+    private void EditClicked()
+    {
+
+        //EmployeeGroup1
+        AddOrUpdateEmployee!.Employee.Id = SelectedEmployee.Id;
+        AddOrUpdateEmployee!.EmployeeGroup1.Name = SelectedEmployee.Name;
+        AddOrUpdateEmployee!.EmployeeGroup1.TelephoneNumber = SelectedEmployee.TelephoneNumber;
+        AddOrUpdateEmployee!.EmployeeGroup1.FileNumber = SelectedEmployee.FileNumber;
+        AddOrUpdateEmployee!.EmployeeGroup1.Address = SelectedEmployee.Address;
+        AddOrUpdateEmployee!.EmployeeGroup1.Photo = SelectedEmployee.PhotoUrl;
+        AddOrUpdateEmployee!.EmployeeGroup1.CivilId = SelectedEmployee.CivilId;
+
+
+        //EmployeeGroup2
+        AddOrUpdateEmployee!.EmployeeGroup2.JobName = SelectedEmployee.JobName;
+        AddOrUpdateEmployee!.EmployeeGroup2.Other = SelectedEmployee.Other;
+
+        //Location Information
+        AddOrUpdateEmployee!.CityStr = SelectedEmployee.town!.City!.Name;
+        AddOrUpdateEmployee!.CountryStr = SelectedEmployee.town!.City!.Country!.Name;
+        AddOrUpdateEmployee!.TownStr = SelectedEmployee.town!.Name;
+
+        //Categories
+        AddOrUpdateEmployee!.GeneralDepartmentStr = SelectedEmployee.branch!.Department!.GeneralDepartment!.Name;
+        AddOrUpdateEmployee!.DepartmentStr = SelectedEmployee.branch!.Department!.Name;
+        AddOrUpdateEmployee.BranchStr = SelectedEmployee.branch!.Name;
+
+        //Title
+        AddOrUpdateEmployee.Title = "Update";
+        SelectedEmployee = new();
+        contextMenu!.CloseContextMenu();
+        ShowAddOrUpdatePage = true;
+        ShowMainPage = false;
+
+    }
+
+    private async Task DeleteClicked()
+    {
+        contextMenu?.CloseContextMenu();
+
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are You sure?",
+                Text = $"You will not be able to recover {SelectedEmployee.Name}!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              $"{SelectedEmployee.Name} has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _employeeService.Delete(SelectedEmployee.Id, Constants.EmployeeBaseUrl);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                SelectedEmployee = new();
+            await loadEmployee();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              $"{SelectedEmployee.Name} is safe :)",
+              SweetAlertIcon.Error
+              );
+        }
+    }
+
+    private void ViewClicked()
+    {
+        employee = SelectedEmployee;
+        contextMenu!.CloseContextMenu();
+        ShowDetailsPage = true;
+        ShowMainPage = false;
+        SelectedEmployee = new();
+    }
+
+    private async Task SaveHealthEvent(Doctor item)
+    {
+        item.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await _doctorService.Insert(item, Constants.DoctorBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            Doctor = new();
+            doctorDialog!.Close();
+        }
+
+    }
+
+    private async Task SaveSanctionEvent(Sanction item)
+    {
+        item.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await _sanctionService.Insert(item, Constants.SanctionBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            sanction = new();
+            sanctionDialog!.CloseDialog();
+        }
+
+    }
+
+    private async Task CreateVactionEvent(Vaction item)
+    {
+        item.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await _vactionService.Insert(item, Constants.VacationBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            vaction = new();
+            vactionDialog!.CloseDialog();
+        }
+
+    }
+
+    private void DetailsPageCloseBtnClicked()
+    {
+        ShowDetailsPage = false;
+        ShowMainPage = true;
+    }
+
+    private void AddHealthClicked()
+    {
+        Doctor.EmployeeId = SelectedEmployee.Id;
+        contextMenu!.CloseContextMenu();
+        doctorDialog?.OpenDialog();
+    }
+
+
+
+    private void AddOvertimeClicked()
+    {
+        OverTime.EmployeeId = SelectedEmployee.Id;
+        contextMenu!.CloseContextMenu();
+        overtimeDialog?.OpenDialog();
+    }
+
+    private void AddSanctionClicked()
+    {
+        sanction.EmployeeId = SelectedEmployee.Id;
+        contextMenu!.CloseContextMenu();
+        sanctionDialog?.OpenDialog();
+    }
+    private void AddVactionClicked()
+    {
+        vaction.EmployeeId = SelectedEmployee.Id;
+        contextMenu!.CloseContextMenu();
+        vactionDialog?.OpenDialog();
+    }
+
+    private async Task SaveOvertimeEvent(OverTime overTime)
+    {
+        overTime.EmployeeId = SelectedEmployee.Id;
+        var (flag, message) = await _overtimeService.Insert(overTime, Constants.OvertimeBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            SelectedEmployee = new();
+            OverTime = new();
+            overtimeDialog!.CloseDialog();
+        }
+
+    }
+
+    public async Task ExportToExcel()
+    {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+        using (var package = new ExcelPackage())
+        {
+            var worksheet = package.Workbook.Worksheets.Add("Employees");
+            worksheet.Cells["A1"].LoadFromCollection(pagedEmployess, true);
+            var stream = new MemoryStream();
+            package.SaveAs(stream);
+            stream.Position = 0;
+            var base64 = Convert.ToBase64String(stream.ToArray());
+            await JS.InvokeVoidAsync("saveAsFile", "employees.xlsx", base64);
+        }
+    }
+
+}

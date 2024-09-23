@@ -1,0 +1,63 @@
+﻿
+<MudDialog Style="width:280px;" @bind-Visible="IsVisible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.AddBusiness"Class="mr-3 mb-n1"/>
+            @Title OvertimeType
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="itemModel" OnValidSubmit="Save">
+           <DataAnnotationsValidator/>
+           <MudItem Class="form-group">
+                <MudTextField @bind-Value="itemModel.Name" Label="Name" />
+                <ValidationMessage For="()=>itemModel.Name" class="text-danger"/>
+           </MudItem>
+           
+             
+            <MudItem Class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </MudItem>
+        </EditForm>
+     
+    </DialogContent>
+  
+</MudDialog>
+
+@code {
+    [Parameter] public OverTimeType itemModel { get; set; } = new();
+    [Parameter] public EventCallback<OverTimeType> HandleSaveOperationEvent { get; set; }
+
+    public bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+    public async void Save()
+    {
+        if(string.IsNullOrEmpty(itemModel.Name))
+        {
+
+            await dialogService.ShowMessageBox("Alert!", "You need to provide overtime");
+        }else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(itemModel);
+        }    
+
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+
+}

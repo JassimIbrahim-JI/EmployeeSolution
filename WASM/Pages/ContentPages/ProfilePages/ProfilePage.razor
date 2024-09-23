@@ -1,0 +1,173 @@
+﻿@page "/my-profile"
+@using System.Security.Claims
+@inject GetHttpClient getHttpClient
+@inject UserProfileState model
+@implements IDisposable
+
+
+@if(sectionState.ShowUserProfile)
+{
+    <MudDialog Class="py-1" Style="width:500px; margin:auto; overflow-y:hidden" @bind-Visible="IsVisible">
+       <TitleContent>
+          
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Info"></MudIcon>
+                    Personal Information
+                </MudText>
+           
+       </TitleContent>
+       <DialogContent>
+            <EditForm Model="model.userProfile" OnValidSubmit="@(()=>UpdateProfile(model.userProfile))">
+                <DataAnnotationsValidator />
+                <MudCardContent>
+                    <MudStack>
+                        <MudTextField @bind-Value="model.userProfile.Id" ReadOnly="true" Label="Id" Disabled="true" />
+                        <MudTextField @bind-Value="model.userProfile.Name" Label="Name" Immediate="true"
+                                      For="@(()=>model.userProfile.Name)" />
+                        <MudTextField @bind-Value="model.userProfile.Email" Label="Email" Immediate="true"
+                                      For="@(()=>model.userProfile.Email)" />
+
+                        <MudGrid Justify="@Justify.FlexStart" Spacing="1">
+                            <MudItem Class="mt-2">
+                              
+                                <InputFile OnChange="UploadImage" class="form-control" />
+
+                                @if (model.userProfile.ProfilePicture != null)
+                                {
+                                    <img src="@model.userProfile.ProfilePicture" class="mt-1" style="width:90px; height:90px; border-radius:50%;" />
+                                }
+
+
+                            </MudItem>
+                            <MudItem Class="mt-3">
+                                @if (ShowSpinner)
+                                {
+                                    <WASM.Pages.OtherPages.ButtonLoadingSpinner/>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" ButtonType="MudBlazor.ButtonType.Submit">Save</MudButton>
+                                }
+                                <MudButton Variant="Variant.Filled" Color="Color.Info" Class="ms-2" OnClick="CloseDialog">Close</MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+                </MudCardContent>
+
+
+            </EditForm>
+       </DialogContent>
+
+    </MudDialog>
+      
+}
+
+
+@code {
+    public bool ShowSpinner { get; set; } = false;
+    public bool IsVisible { get; set; } = true;
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await UserDetails();
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserDetails();
+        sectionState.Action +=StateHasChanged;
+        model.Action += StateHasChanged;
+    }
+
+    private async Task UserDetails()
+    {
+        try
+        {
+            var client = await getHttpClient.GetPrivateHttpClient();
+            var auth = await authState.GetAuthenticationStateAsync();
+
+            model.userProfile.Id = auth.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)!.Value;
+            model.userProfile.Name = auth.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)!.Value;
+            model.userProfile.Email = auth.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)!.Value;
+
+            var response = await client.GetAsync($"api/authentication/user-image/{model.userProfile.Id}");
+            if (!response.IsSuccessStatusCode) return;
+
+            var result = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrEmpty(result)) return;
+
+            else
+                model.userProfile.ProfilePicture = result!;
+        }
+        catch
+        {
+        }    
+    }
+
+    private async Task LogoutAsync()
+    {
+        var logoutModel = new UserSession();
+        var customAuth = (CustomAuthenticationState)authState;
+        await customAuth.UpdateAuthenticationState(logoutModel);
+        _Navi.NavigateTo("/identity/account/login", replace: true, forceLoad: true);
+
+    }
+
+    private async Task UpdateProfile(UserProfile user)
+    {
+        if (model.userProfile.ProfilePicture == "../images/profile/profile.jpg")
+        {
+            await swal.FireAsync("Alert!", "Add profile image");
+            return;
+        } 
+        ShowSpinner = true;
+
+
+        var result = await _accountService.UpdateProfile(user);
+        if(result)
+        {
+            ShowSpinner = false;
+            await dialogService.ShowMessageBox("Success", "Profile Updated");
+            model.ProfileUpdated();
+            await LogoutAsync();
+        }
+        ShowSpinner = false;
+    }
+
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png"))
+        {
+            var format = "image/png";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            model.userProfile.ProfilePicture = imageData;
+            imageData = "";
+            return;
+        }
+        await swal.FireAsync(new SweetAlertOptions
+        {
+           Title = "Alert!",
+           Text = "PNG file needed",
+           Icon = SweetAlertIcon.Info
+        });
+
+    }
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+        model.Action -= StateHasChanged;
+    }
+
+}

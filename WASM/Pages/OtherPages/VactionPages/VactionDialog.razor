@@ -1,0 +1,86 @@
+﻿
+<MudDialog Style="width:280px;" @bind-Visible="IsVisible">
+    <TitleContent>
+
+        <MudText>
+            <MudIcon Icon="@Icons.Material.Filled.AddBusiness"></MudIcon>
+            @Title Overtime
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Vaction" Enhance OnValidSubmit="Save">
+           <DataAnnotationsValidator/>
+            <MudTextField @bind-Value="@Vaction.EmployeeId" Disabled="true" ReadOnly="true" Label="ID" />
+            <MudDatePicker @bind-Date="@Vaction.StartDate" DateFormat="yyyy-MM-dd" MinDate="minDate" MaxDate="maxDate" Label="Start Date" />
+            <MudTextField InputType="InputType.Number" @bind-Value="@Vaction.NumberOfDays" Label="Name" For="@(()=>Vaction.NumberOfDays)" />
+            <MudDatePicker Date="@Vaction.EndDate.Date" Disabled="true" ReadOnly="true" DateFormat="yyyy-MM-dd" Label="End Date" />
+
+            <MudSelect T="int" Class="mt-3" @bind-Value="Vaction.VactionTypeId" Required="true" Variant="Variant.Outlined" Label="Select vaction type" AnchorOrigin="Origin.BottomCenter">
+                
+                    @foreach (var item in VactionTypes)
+                    {
+                        <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                    }
+                
+            </MudSelect>
+            <div class="d-flex mt-3 justify-content-start align-items-center">
+                @* Class="ml-auto" *@
+                <MudButton ButtonType="MudBlazor.ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
+                <MudButton Class="ml-auto" OnClick="CloseDialog">Close</MudButton>
+            </div>
+        </EditForm>
+     
+    </DialogContent>
+   
+
+</MudDialog>
+ 
+
+@code {
+    [Parameter] public Vaction Vaction { get; set; } = new();
+    [Parameter] public List<VactionType> VactionTypes { get; set; } = new();
+    [Parameter] public EventCallback<Vaction> HandleSaveOperationEvent { get; set; }
+
+    private DateTime minDate = new DateTime(2023, 1, 1);
+    private DateTime maxDate = new DateTime(2025, 1, 1);
+
+    public string Title { get; set; } = "Add";
+    public bool IsVisible { get; set; } = false;
+
+    public async void Save()
+    {
+        if(Vaction.VactionTypeId <=0)
+        {
+            await dialogService.ShowMessageBox("You need to provide type.", "Alert!");
+        }
+        else
+        {
+            await HandleSaveOperationEvent.InvokeAsync(Vaction);
+        }
+
+    }
+
+    public void OnValueChange(ChangeEventArgs args)
+    {
+        Vaction.VactionTypeId = int.Parse(args.Value!.ToString()!);
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+
+    }
+
+    private async Task ForceLoadVactionTypes() =>
+    VactionTypes = await _vactionTypeService.GetAll(Constants.VacationsTypeBaseUrl);
+
+    public async Task OpenDialog()
+    {
+        IsVisible = true;
+        await ForceLoadVactionTypes();
+        StateHasChanged();
+    }
+}

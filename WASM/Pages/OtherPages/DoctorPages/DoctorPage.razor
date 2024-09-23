@@ -1,0 +1,197 @@
+﻿@implements IDisposable
+
+@if(sectionState.ShowHealth)
+{
+    <MudPaper Class="mt-5" Elevation="1">
+        <MudTable Items="@doctors.Take(7)" @bind-SelectedItem="doctor"
+                  Bordered="true" Dense="@dense" Hover="@hover" Filter="new Func<Doctor, bool>(FilterAsync)" SortLabel="Sort By">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Class="float-start me-4">
+                    Health Issues
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="AddClicked" StartIcon="@Icons.Material.Filled.Add" IconColor="Color.Primary">Add HealthStatus</MudButton>
+                <MudSpacer />
+                <MudTextField Placeholder="Search"
+                              Adornment="Adornment.Start"
+                              IconSize="Size.Small"
+                              Class="mt-0"
+                              FullWidth="false"
+                              Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              @bind-Value="searchString">
+
+                </MudTextField>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">#</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">Id</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">MedicalDiagonse</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">MedicalRecommendation</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">Date</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<Doctor, object>(x=>x.EmployeeId)">Actions</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+
+                <MudTd DataLabel="#">@((doctors.IndexOf(context) + 1))</MudTd>
+                <MudTd DataLabel="Id">@context.EmployeeId</MudTd>
+                <MudTd DataLabel="MedicalDiagonse">@context.MedicalDiagonse</MudTd>
+                <MudTd DataLabel="MedicalRecommendation">@context.MedicalRecommendation</MudTd>
+                <MudTd DataLabel="Date">@context.Date</MudTd>
+
+                <MudTd DataLabel="Actions">
+                    <MudItem>
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Color="Color.Info" id="cursorStyle" @onclick="()=>EditClicked(context)"></MudIcon>
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Warning" id="cursorStyle" @onclick="()=>DeleteClicked(context)"></MudIcon>
+                    </MudItem>
+                </MudTd>
+
+
+
+            </RowTemplate>
+
+        </MudTable>
+    </MudPaper> 
+}
+
+<DoctorDialog @ref="doctorDialog" Doctor="doctor" HandleSaveOperationEvent="HandleSaveOperationEvent" />
+
+<style>
+    #cursorStyle{
+        cursor:pointer;
+    }
+</style>
+
+@code {
+
+    DoctorDialog? doctorDialog;
+    Doctor doctor = new();
+
+
+    public List<Doctor> doctors { get; set; } = new();
+
+    private bool hover = true;
+    private bool dense = true;
+    private string searchString = "";
+
+    private bool FilterAsync(Doctor doctor)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if ($"{doctor.MedicalDiagonse}".Contains(searchString)) return true;
+        if ($"{doctor.EmployeeId}".Contains(searchString)) return true;
+        if ($"{doctor.MedicalRecommendation}".Contains(searchString)) return true;
+
+        return false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        doctor.Date = new DateTime(2024,1,01);
+        await Task.CompletedTask;
+        await GetHealth();
+        sectionState.Action += StateHasChanged;
+    }
+
+     void AddClicked()
+    {
+        doctor = new();
+         OpenDialog();
+    }
+
+    private void OpenDialog()
+    {
+        doctorDialog?.OpenDialog();
+    }
+
+    private void EditClicked(Doctor doc)
+    {
+        doctorDialog?.ChangeTitle("Update");
+        doctor = doc;
+        OpenDialog();
+    }
+
+    private async Task DeleteClicked(Doctor doc)
+    {
+        SweetAlertResult confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are You sure?",
+                Text = $"You will not be able to recover this!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Delete",
+                CancelButtonText = "Cancel"
+            });
+        if (!string.IsNullOrEmpty(confirm.Value))
+        {
+            await swal.FireAsync(
+              "Deleted",
+              "this item has been deleted.",
+              SweetAlertIcon.Success
+              );
+            var response = await _doctorService.Delete(doc.Id, Constants.DoctorBaseUrl);
+            var result = await DisplayMessage(response.Successd, response.Message);
+            if (result)
+                await GetHealth();
+        }
+        else if (confirm.Dismiss == DismissReason.Cancel)
+        {
+            await swal.FireAsync(
+              "Cancelled",
+              "this item is safe now :)",
+              SweetAlertIcon.Error
+              );
+        }
+    }
+
+    private async Task HandleSaveOperationEvent(Doctor doctor)
+    {
+        var result = await _doctorService.Update(doctor, Constants.DoctorBaseUrl);
+        if(result.Successd)
+        {
+            await GetHealth();
+        }
+        bool SuccessCheck = await DisplayMessage(result.Successd, result.Message);
+        if(SuccessCheck)
+        {
+            doctor = new();
+            await GetHealth();
+            doctorDialog!.Close();
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool success, string message)
+    {
+        if(success)
+        {
+            await dialogService.ShowMessageBox("Success Operation",message);
+            return true;
+        }
+        else
+        {
+            await dialogService.ShowMessageBox("Alert!", message);
+            return false;
+        }
+    }
+
+    private async Task GetHealth() => doctors = await _doctorService.GetAll(Constants.DoctorBaseUrl);
+
+    public void Dispose()
+    {
+        sectionState.Action -= StateHasChanged;
+    }
+
+  
+}
