@@ -1,7 +1,9 @@
-# Employee Management System
+# Maze Employee Management System
 
 ## Overview
 The Employee Management System (EMS) is a web-based application designed to streamline and automate various HR processes within an organization. The system manages employee records, tracks attendance, handles leave requests, processes payroll, and facilitates performance reviews.
+[Video Overview]([https://link-to-your-video.com](https://drive.google.com/file/d/1-AAxgaO1Y8RHgyke-tO17NJ4ORhlk_bs/view?usp=sharing))
+
 
 ## Features
 - **User Authentication and Authorization**
